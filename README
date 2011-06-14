@@ -58,3 +58,4 @@ To Get Up and Running:
 	THINGS TO NOTE: 
 		A.  You'll need to insert any custom data types you use in the actual database into the test database.
 		B.  The best way I have found to test data returned from procedures is to create a function which returns a table with the appropriate fields and types for that select statement.  In the procedure select the data from the procedure into that temporary table, and then verify the results.  Look at: UserDefindedFunctions/z_CreateResourceTable.sql and UnitTests/t_SelectResource.sql
+		C.  The files not mentioned in this readme are example files to get you started. 
