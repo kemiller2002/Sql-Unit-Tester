@@ -1,0 +1,60 @@
+To Get Up and Running:
+
+	1.  Create a database.  
+		I would recommend not putting the test tables in the same database as the code to test.  You can, but I've found that keeping a separation between the two makes cleanup a lot easier.
+		
+	2.  Run the table scripts: 
+		Application.sql
+		UnitTestCatalog.sql
+		UnitTestResults.sql
+		
+	3.  Run all the sql scripts in the main directory:
+		a_SelectTestResults.sql
+		b_RunUnitTests.sql
+		InsertNewApplication.sql
+		InsertNewUnitTest.sql
+		LoadTests.sql
+		LoadTestsIntoCatalog.sql
+		RunTestAndReturnRecordset.sql
+		
+	4.  To create a test, you make a wrapper stored procedure (which acts like the test method for the harness).  You need to have the wrapper take two parameters: 
+	@OutputResult	INT OUTPUT,
+	@OutPutMessage	VARCHAR(1000) OUTPUT
+	
+	For a pass the @OutputResult should be > 0
+	For a fail the @OutputResult should be < 0
+	0 is a special number which signifies the test hasn't been run for the current battery, so the result needs to be set for the system to acknowledge the results.
+	
+	The @OutPutMessage is a message describing what happened in the test (generally a description of the error).
+	
+	The wrapper names should be prefixed with the t_ (this will make it easier to distinguish which ones they are later on.)
+	
+	5. To run a batch of tests, they must be associated with an "application"
+		run [InsertNewApplication].  It will ask you for an application name.  The name is just so you can test multiple systems and have the results segregated from each other.
+	
+	6. Now that you have the application set up: run [InsertNewUnitTest].  This will ask you for the application name (@application) and the name (@name) of your unit test.  
+	
+	7. With the Test(s) loaded into the catalog, you can set up a test package (just a list of the tests which are going to be run, and their results when the run is finished).  To load this run: [LoadTests]  It takes 3 parameters:
+
+	@TestName		VARCHAR(75)			= NULL,
+	@Application	VARCHAR(20)			= NULL,
+	@RunID			UNIQUEIDENTIFIER	OUTPUT
+	
+	If you want to run an individual test, fill in the @TestName parameter.  If you want to run all the tests associated with an application, fill in the @Application Parameter.  If you want to run all tests in the catalog, don't fill either in.  You'll need the @RunID to actually run the battery.
+	
+	Here is an example on how to run tests and get the results (the example application name is called EvM)
+	
+	DECLARE @ID UNIQUEIDENTIFIER
+	
+	EXEC LoadTests NULL,'EvM', @RunID = @ID OUTPUT
+	EXEC RunUnitTests @ID
+	EXEC SelectTestResults @ID
+
+	This will run all the tests for the EvM application, and return the results.
+
+	
+	There are examples included which show how to test different scenarios such as validating information in a recordset etc. The one scenario this harness cannot handle is a select statement returning multiple recordsets with different fields.  
+
+	THINGS TO NOTE: 
+		A.  You'll need to insert any custom data types you use in the actual database into the test database.
+		B.  The best way I have found to test data returned from procedures is to create a function which returns a table with the appropriate fields and types for that select statement.  In the procedure select the data from the procedure into that temporary table, and then verify the results.  Look at: UserDefindedFunctions/z_CreateResourceTable.sql and UnitTests/t_SelectResource.sql
